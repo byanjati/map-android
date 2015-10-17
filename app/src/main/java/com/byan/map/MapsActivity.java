@@ -1,10 +1,21 @@
 package com.byan.map;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -30,37 +41,76 @@ import java.util.Map;
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap gMap; // Might be null if Google Play services APK is not available.
-    private static final LatLng LOWER_MANHATTAN = new LatLng(40.722543,
-            -73.998585);
-    private static final LatLng BROOKLYN_BRIDGE = new LatLng(40.7057, -73.9964);
-    private static final LatLng WALL_STREET = new LatLng(40.7064, -74.0094);
+
+    private static final LatLng ITB = new LatLng(-6.89148, 107.6106591);
+    private static final LatLng UNISBA = new LatLng(-6.9034436, 107.6083965);
+    private static final LatLng BEC = new LatLng(-6.9080755,107.6077688);
+
+    protected LocationManager locationManager;
+    private Location myLocation;
+    LatLng myLatLng;
 
     final String TAG = "PathGoogleMapActivity";
+
+    private void drawDestionation(LatLng fromDst, LatLng toDst){
+        String url = getMapsApiDirectionsUrl(fromDst, toDst);
+        requestUrl(url);
+        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(fromDst,
+                11));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        final Spinner spTo = (Spinner) findViewById(R.id.selectTo);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.cities, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spTo.setAdapter(adapter);
+
+        Button buttonGo = (Button) findViewById(R.id.goBtn);
+        buttonGo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                gMap.clear();
+                String spinnerVal = spTo.getSelectedItem().toString();
+                switch (spinnerVal){
+                    case "ITB" :
+                        drawDestionation(myLatLng, ITB);
+                        addMarkers(spinnerVal,myLatLng,ITB);
+                        break;
+                    case "UNISBA" :
+                        drawDestionation(myLatLng, UNISBA);
+                        addMarkers(spinnerVal, myLatLng, UNISBA);
+                        break;
+                    case "BEC" :
+                        drawDestionation(myLatLng, BEC);
+                        addMarkers(spinnerVal,myLatLng,BEC);
+                        break;
+                }
+            }
+        });
+
+         /* Get Location using Network GPS */
+        locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+
+        if (locationManager != null) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    || ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                myLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+        }
+
+        myLatLng = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
         gMap = fm.getMap();
-
-        MarkerOptions options = new MarkerOptions();
-        options.position(LOWER_MANHATTAN);
-        options.position(BROOKLYN_BRIDGE);
-        options.position(WALL_STREET);
-
-        gMap.addMarker(options);
-        String url = getMapsApiDirectionsUrl();
-        System.out.println("request url : " + url);
-        requestUrl(url);
-
-        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BROOKLYN_BRIDGE,
-                13));
-        addMarkers();
-
+        gMap.addMarker(new MarkerOptions().position(myLatLng).title("My Location"));
+        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLatLng,
+                10));
     }
 
     private void requestUrl(String url){
@@ -89,28 +139,24 @@ public class MapsActivity extends FragmentActivity {
         requestQueue.add(requestRS);
     }
 
-    private void addMarkers() {
+    private void addMarkers(String toDstTitle, LatLng fromDst, LatLng toDst) {
         if (gMap != null) {
-            gMap.addMarker(new MarkerOptions().position(BROOKLYN_BRIDGE)
-                    .title("First Point"));
-            gMap.addMarker(new MarkerOptions().position(LOWER_MANHATTAN)
-                    .title("Second Point"));
-            gMap.addMarker(new MarkerOptions().position(WALL_STREET)
-                    .title("Third Point"));
+            gMap.addMarker(new MarkerOptions().position(fromDst)
+                    .title("My Location"));
+            gMap.addMarker(new MarkerOptions().position(toDst)
+                    .title(toDstTitle));
         }
     }
 
-    private String getMapsApiDirectionsUrl() {
-        String waypoints = "waypoints=optimize:true|"
-                + LOWER_MANHATTAN.latitude + "," + LOWER_MANHATTAN.longitude
-                + "|" + "|" + BROOKLYN_BRIDGE.latitude + ","
-                + BROOKLYN_BRIDGE.longitude + "|" + WALL_STREET.latitude + ","
-                + WALL_STREET.longitude;
+    private String getMapsApiDirectionsUrl(LatLng fromDestination, LatLng toDestination) {
+        String waypoints = "waypoints=optimize:true" +
+                "|" + fromDestination.latitude + "," + fromDestination.longitude + "|" +
+                "|" + toDestination.latitude + "," + toDestination.longitude + "|";
 
         String sensor = "sensor=false";
 
-        String origin = "origin=" + LOWER_MANHATTAN.latitude + "," + LOWER_MANHATTAN.longitude;
-        String destination = "destination=" + WALL_STREET.latitude + "," + WALL_STREET.longitude;
+        String origin = "origin=" + fromDestination.latitude + "," + fromDestination.longitude;
+        String destination = "destination=" + toDestination.latitude + "," + toDestination.longitude;
         String params = origin + "&" + destination + "&%20" + waypoints + "&" + sensor;
 
         String output = "json";
@@ -161,7 +207,7 @@ public class MapsActivity extends FragmentActivity {
                 }
 
                 polyLineOptions.addAll(points);
-                polyLineOptions.width(2);
+                polyLineOptions.width(5);
                 polyLineOptions.color(Color.BLUE);
             }
 

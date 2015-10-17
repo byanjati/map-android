@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">map</string>
     <string name="title_activity_maps">Map</string>
+    <string-array name="cities">
+        <item>ITB</item>
+        <item>UNISBA</item>
+        <item>BEC</item>
+    </string-array>
 </resources>

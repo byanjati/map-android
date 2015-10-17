@@ -17,6 +17,8 @@ import java.util.Map;
 /**
  * Created by byan on 10/17/2015.
  */
+
+// Request Class using Volley
 public class GetRequest extends Request<JSONObject> {
 
     private Response.Listener<JSONObject> listener;
