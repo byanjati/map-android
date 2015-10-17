@@ -87,7 +87,7 @@ public class MapsActivity extends FragmentActivity {
                         break;
                     case "BEC" :
                         drawDestionation(myLatLng, BEC);
-                        addMarkers(spinnerVal,myLatLng,BEC);
+                        addMarkers(spinnerVal, myLatLng, BEC);
                         break;
                 }
             }
@@ -104,13 +104,7 @@ public class MapsActivity extends FragmentActivity {
         }
 
         myLatLng = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-        SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-
-        gMap = fm.getMap();
-        gMap.addMarker(new MarkerOptions().position(myLatLng).title("My Location"));
-        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLatLng,
-                10));
+        setUpMapIfNeeded();
     }
 
     private void requestUrl(String url){
@@ -257,6 +251,8 @@ public class MapsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #gMap} is not null.
      */
     private void setUpMap() {
-        gMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        gMap.addMarker(new MarkerOptions().position(myLatLng).title("My Location"));
+        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLatLng,
+                10));
     }
 }
